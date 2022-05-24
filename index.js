@@ -51,6 +51,15 @@ async function run() {
             console.log(myPurchase);
             res.send(result)
         })
+
+        // load purchase porducts of single user
+        app.get('/mypurchases', async (req, res) => {
+            const email = req.query.email
+            const query = {email : email}
+            const cursor = myPurchaseCollection.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+        })
     }
     finally {
         
