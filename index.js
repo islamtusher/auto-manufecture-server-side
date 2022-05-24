@@ -21,6 +21,7 @@ async function run() {
         await client.connect()
         console.log('Connect With MongoDB');
         const partsCollection = client.db("auto-manufac").collection("available-parts");
+        const myPurchaseCollection = client.db("auto-manufac").collection("my-purchases");
 
         // server home 
         app.get('/', (req, res) => {
@@ -40,6 +41,14 @@ async function run() {
             const id = req.params.id
             const query ={_id : ObjectId(id)}
             const result = await partsCollection.findOne(query)
+            res.send(result)
+        })
+
+        // post my order
+        app.post('/mypurchase', async(req, res) => {
+            const myPurchase = req.body
+            const result = await myPurchaseCollection.insertOne(myPurchase)
+            console.log(myPurchase);
             res.send(result)
         })
     }
