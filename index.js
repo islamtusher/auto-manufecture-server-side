@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 // const jwt = require('jsonwebtoken');
@@ -33,9 +33,15 @@ async function run() {
             const cursor = partsCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
+         })
+        
+        //load single part
+        app.get('/part/:id', async (req, res) => {
+            const id = req.params.id
+            const query ={_id : ObjectId(id)}
+            const result = await partsCollection.findOne(query)
+            res.send(result)
         })
-
-
     }
     finally {
         
