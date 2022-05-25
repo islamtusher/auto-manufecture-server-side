@@ -16,6 +16,24 @@ app.use(cors())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xlljd.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+// JWT TOKEN VERIFYING 
+// verify the user have the valid token or not
+function jwtVerify(req, res, next) {
+    const authorization = req.headers.authorization
+    console.log(authorization);
+    if (!authorization) {
+        return res.status(401).send({message: 'UnAuthorize Access'})
+    } else {
+        const accessToken = authorization.split(" ")[1]
+        jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN, function (err, decoded) {
+            if (err) {
+                return res.status(403).send({message: 'Forbidden Access'})
+            }
+            req.decoded = decoded
+            next()
+          });
+    }
+}
 
 async function run() {
     try {
@@ -68,7 +86,7 @@ async function run() {
         })
 
         // load all purchases parts/items of current user
-        app.get('/myallpurchases', async (req, res) => {
+        app.get('/myallpurchases', jwtVerify, async (req, res) => {
             const email = req.query.userEmail
             const query = {userEmail : email}
             const cursor = myPurchaseCollection.find(query)
