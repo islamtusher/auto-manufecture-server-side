@@ -1,14 +1,15 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KYR);
 const cors = require('cors');
-// const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 require('dotenv').config();
 
 const app = express()
 app.use(express.json())
 app.use(cors())
+
 // auto-manufac-admin
 // smM0UURzOHfGB5qI
 
@@ -22,13 +23,28 @@ async function run() {
         console.log('Connect With MongoDB');
         const partsCollection = client.db("auto-manufac").collection("available-parts");
         const myPurchaseCollection = client.db("auto-manufac").collection("my-purchases");
+        const userCollection = client.db("auto-manufac").collection("users");
 
         // server home 
         app.get('/', (req, res) => {
             res.send('Auto Menufac server running')
         })
 
-        //load available parts
+        // UpSerat Registered User
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const user = req.body
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options)
+            const accessToken = jwt.sign({ email: email}, process.env.JWT_ACCESS_TOKEN, { expiresIn: '10d' });
+            res.send([result, {accessToken : accessToken}])
+        })
+
+        //load available parts/items
          app.get('/parts', async(req, res)=>{
             const query ={}
             const cursor = partsCollection.find(query)
@@ -36,7 +52,7 @@ async function run() {
             res.send(result)
          })
         
-        //load single part
+        //load single part/item
         app.get('/part/:id', async (req, res) => {
             const id = req.params.id
             const query ={_id : ObjectId(id)}
@@ -44,22 +60,55 @@ async function run() {
             res.send(result)
         })
 
-        // post my order
+        // post my purchases order
         app.post('/mypurchase', async(req, res) => {
             const myPurchase = req.body
             const result = await myPurchaseCollection.insertOne(myPurchase)
-            console.log(myPurchase);
             res.send(result)
         })
 
-        // load purchase porducts of single user
-        app.get('/mypurchases', async (req, res) => {
-            const email = req.query.email
-            const query = {email : email}
+        // load all purchases parts/items of current user
+        app.get('/myallpurchases', async (req, res) => {
+            const email = req.query.userEmail
+            const query = {userEmail : email}
             const cursor = myPurchaseCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
         })
+
+        // load single purchase part/item of current user
+        app.get('/mypurchase/:id', async (req, res) => {
+            const id = req.params.id
+            const query ={_id : ObjectId(id)}
+            const result = await myPurchaseCollection.findOne(query)
+            res.send(result)
+        })
+
+
+        // Delete Purchased part/item of current user
+        app.delete('/mypurchases', async (req, res) => {
+            const query = {_id : ObjectId(req.query.id)}
+            const result = await myPurchaseCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        // payment oparation
+        app.post('/create-payment-intent', async (req, res) => {
+            const service = req.body;
+            console.log(service);
+            const name = service.price
+            const price = name * 100
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: price,
+              currency: 'usd',
+              payment_method_types: ["card"],
+            });
+          
+            res.send({
+              clientSecret: paymentIntent.client_secret,
+            });
+          });
     }
     finally {
         
