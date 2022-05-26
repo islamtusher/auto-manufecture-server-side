@@ -1,10 +1,11 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KYR);
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 require('dotenv').config();
+const Stripe = require("stripe")
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express()
 app.use(express.json())
@@ -94,8 +95,15 @@ async function run() {
             res.send(result)
         })
 
+        // updata my Purchases
+        app.patch('/mypurchase/:id', jwtVerify, async (req, res) => {
+            const id = req.params.id
+            const paymentInfo = req.body
+            console.log(paymentInfo);
+        })
+
         // load single purchase part/item of current user
-        app.get('/mypurchase/:id', async (req, res) => {
+        app.get('/mypurchase/:id', jwtVerify,  async (req, res) => {
             const id = req.params.id
             const query ={_id : ObjectId(id)}
             const result = await myPurchaseCollection.findOne(query)
@@ -111,11 +119,11 @@ async function run() {
         })
 
         // payment oparation
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', jwtVerify, async (req, res) => {
             const service = req.body;
             console.log(service);
-            const name = service.price
-            const price = name * 100
+            const name = service.totalPrice
+            const price = Math.round(name * 100)
             // Create a PaymentIntent with the order amount and currency
             const paymentIntent = await stripe.paymentIntents.create({
               amount: price,
@@ -123,9 +131,7 @@ async function run() {
               payment_method_types: ["card"],
             });
           
-            res.send({
-              clientSecret: paymentIntent.client_secret,
-            });
+            res.send({clientSecret: paymentIntent.client_secret});
           });
     }
     finally {
