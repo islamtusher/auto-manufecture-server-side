@@ -43,6 +43,7 @@ async function run() {
         const partsCollection = client.db("auto-manufac").collection("available-parts");
         const myPurchaseCollection = client.db("auto-manufac").collection("my-purchases");
         const userCollection = client.db("auto-manufac").collection("users");
+        const paymentInfoCollection = client.db("auto-manufac").collection("payment-info");
 
         // server home 
         app.get('/', (req, res) => {
@@ -97,9 +98,22 @@ async function run() {
 
         // updata my Purchases
         app.patch('/mypurchase/:id', jwtVerify, async (req, res) => {
-            const id = req.params.id
+            const partId = req.params.id
             const paymentInfo = req.body
-            console.log(paymentInfo);
+            const {clientSecret, transationId, paymentMethod, status} = paymentInfo
+            const filter = {_id : ObjectId(partId)};
+            const updateDoc = {
+                $set: {
+                    paid : true,
+                    clientSecret : clientSecret,
+                    transationId : transationId,
+                    paymentMethod : paymentMethod,
+                    status : status,
+                },
+            };
+            const insertedResult = await paymentInfoCollection.insertOne(paymentInfo)
+            const myPurchaseUpdate = await myPurchaseCollection.updateOne(filter, updateDoc)
+            res.status(200).send([insertedResult, myPurchaseUpdate ])
         })
 
         // load single purchase part/item of current user
@@ -132,7 +146,7 @@ async function run() {
             });
           
             res.send({clientSecret: paymentIntent.client_secret});
-          });
+        });
     }
     finally {
         
