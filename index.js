@@ -140,6 +140,14 @@ async function run() {
             res.send(result)
         })
 
+        //load all users Reviews
+        app.get('/reviews', async(req, res)=>{
+            const query ={}
+            const cursor = reviewsCollection.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+         })
+
         // payment oparation
         app.post('/create-payment-intent', jwtVerify, async (req, res) => {
             const service = req.body;
