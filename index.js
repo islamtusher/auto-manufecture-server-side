@@ -66,6 +66,14 @@ async function run() {
             res.send([result, {accessToken : accessToken}])
         })
 
+        // load all users 
+        app.get('/allusers', async(req, res)=>{
+            const query ={}
+            const cursor = userCollection.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
         //load available parts/items
          app.get('/parts', async(req, res)=>{
             const query ={}
@@ -160,6 +168,15 @@ async function run() {
             };
             const result = await myProfileCollection.updateOne(filter, updateDoc, options)
             res.send(result)
+        })
+
+        // load Users profile Info
+        app.get('/myprofile/:email', async (req, res) => {
+            const email = req.params.email
+            console.log(email);
+            const query ={email : email}
+            const cursor = await myProfileCollection.findOne(query)
+            res.send(cursor)
         })
 
         // payment oparation
