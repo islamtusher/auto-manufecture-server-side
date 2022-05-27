@@ -45,6 +45,7 @@ async function run() {
         const userCollection = client.db("auto-manufac").collection("users");
         const paymentInfoCollection = client.db("auto-manufac").collection("payment-info");
         const reviewsCollection = client.db("auto-manufac").collection("user-reviews");
+        const myProfileCollection = client.db("auto-manufac").collection("my-profiles");
 
         // server home 
         app.get('/', (req, res) => {
@@ -140,13 +141,26 @@ async function run() {
             res.send(result)
         })
 
-        //load all users Reviews
+        // load all users Reviews
         app.get('/reviews', async(req, res)=>{
             const query ={}
             const cursor = reviewsCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
-         })
+        })
+
+        // UpSerat Users profile Info
+        app.put('/myprofile/:email',jwtVerify, async (req, res) => {
+            const email = req.params.email
+            const profile = req.body
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: profile,
+            };
+            const result = await myProfileCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        })
 
         // payment oparation
         app.post('/create-payment-intent', jwtVerify, async (req, res) => {
