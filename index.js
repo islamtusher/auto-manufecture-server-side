@@ -44,6 +44,7 @@ async function run() {
         const myPurchaseCollection = client.db("auto-manufac").collection("my-purchases");
         const userCollection = client.db("auto-manufac").collection("users");
         const paymentInfoCollection = client.db("auto-manufac").collection("payment-info");
+        const reviewsCollection = client.db("auto-manufac").collection("user-reviews");
 
         // server home 
         app.get('/', (req, res) => {
@@ -129,6 +130,13 @@ async function run() {
         app.delete('/mypurchases', async (req, res) => {
             const query = {_id : ObjectId(req.query.id)}
             const result = await myPurchaseCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        // store ueer Reviewa
+        app.post('/reviews', async (req, res) => {
+            const review = req.body
+            const result = await reviewsCollection.insertOne(review)
             res.send(result)
         })
 
