@@ -100,12 +100,19 @@ async function run() {
             res.send(result)                        
         })
 
-         // load admin user
-         app.get('/admin/:email', jwtVerify, async (req, res) => {
-            const email = req.params.email 
-            const user = await userCollection.findOne({ email: email })
-            const isAdmin = user.role === 'admin'
-            res.send({isAdmin: isAdmin})
+        // load admin user
+        app.get('/admin/:email', jwtVerify, async (req, res) => {
+        const email = req.params.email 
+        const user = await userCollection.findOne({ email: email })
+        const isAdmin = user.role === 'admin'
+        res.send({isAdmin: isAdmin})
+        })
+        
+        // add single part/product
+        app.post('/addparts', async (req, res) => {
+            const part = req.body
+            const result = await partsCollection.insertOne(part)
+            res.send(result)
         })
 
         //load available parts/items
