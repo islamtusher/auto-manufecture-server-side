@@ -28,9 +28,11 @@ function jwtVerify(req, res, next) {
         const accessToken = authorization.split(" ")[1]
         jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN, function (err, decoded) {
             if (err) {
-                return res.status(403).send({message: 'Forbidden Access'})
+                return res.status(403).send({ message: 'Forbidden Access' })
+                
             }
             req.decoded = decoded
+            console.log(decoded);
             next()
           });
     }
@@ -52,6 +54,18 @@ async function run() {
             res.send('Auto Menufac server running')
         })
 
+          // verify the user is Admin or not
+          const adminUserVerify =async(req, res, next)=> {
+            const decoded = req.decoded.email
+            const user = await userCollection.findOne({ email: decoded })
+            if (user?.role === 'admin') {
+                next()
+            }
+            else {
+               return res.status(403).send({message: 'Dont Have Permission'})
+            }            
+        }
+
         // UpSerat Registered User
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email
@@ -72,6 +86,26 @@ async function run() {
             const cursor = userCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
+        })
+
+        // upDate a user to admin
+        app.put('/user/admin/:email', jwtVerify, adminUserVerify,  async (req, res) => {
+            const email = req.params.email
+            console.log(email);
+            const filter = { email: email }
+            const updateDoc = {
+                $set:{role : 'admin'}
+            }
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result)                        
+        })
+
+         // load admin user
+         app.get('/admin/:email', jwtVerify, async (req, res) => {
+            const email = req.params.email 
+            const user = await userCollection.findOne({ email: email })
+            const isAdmin = user.role === 'admin'
+            res.send({isAdmin: isAdmin})
         })
 
         //load available parts/items
