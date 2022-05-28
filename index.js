@@ -167,6 +167,35 @@ async function run() {
             res.status(200).send([insertedResult, myPurchaseUpdate ])
         })
 
+        // load all purchase 
+        app.get('/allOrders', jwtVerify, adminUserVerify, async (req, res) => {
+            const query ={}
+            const cursor = myPurchaseCollection.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+        // update the order status
+        app.patch('/order/:id', jwtVerify, async (req, res) => {
+            const partId = req.params.id
+            console.log(partId);
+            const filter = {_id : ObjectId(partId)};
+            const updateDoc = {
+                $set: {
+                    status : 'shipped'
+                },
+            };
+            const myPurchaseUpdate = await myPurchaseCollection.updateOne(filter, updateDoc)
+            res.send(myPurchaseUpdate)
+        })
+
+        // Delete order
+        app.delete('/order/:id', async (req, res) => {
+            const query = {_id : ObjectId(req.params.id)}
+            const result = await myPurchaseCollection.deleteOne(query)
+            res.send(result)
+        })
+
         // load single purchase part/item of current user
         app.get('/mypurchase/:id', jwtVerify,  async (req, res) => {
             const id = req.params.id
