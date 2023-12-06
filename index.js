@@ -246,8 +246,7 @@ async function run() {
     });
 
     // TODO: store user Review
-    app.delete("/reviews/:id", async (req, res) => {
-      console.log("back", req.params.id);
+    app.delete("/reviews/:id", async (req, res) => {    
       const query = { _id: ObjectId(req.params.id) };
       const result = await reviewsCollection.deleteOne(query);
       res.send(result);
